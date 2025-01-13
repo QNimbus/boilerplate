@@ -1,0 +1,71 @@
+services:
+  controller:
+    image: lscr.io/linuxserver/unifi-network-application:latest
+    container_name: ${COMPOSE_PROJECT_NAME}_controller
+    depends_on:
+      - db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Amsterdam
+      - MONGO_USER=unifi
+      - MONGO_PASS=unifi
+      - MONGO_HOST=db
+      - MONGO_PORT=27017
+      - MONGO_DBNAME=unifi
+      - MONGO_AUTHSOURCE=admin
+      - MEM_LIMIT=default #optional
+      - MEM_STARTUP=default #optional
+      - MONGO_TLS= #optional
+    volumes:
+      - type: volume
+        source: unifi_config
+        target: /config
+        read_only: false
+    ports:
+      - 8443:8443
+      - 3478:3478/udp
+      - 10001:10001/udp
+      - 8080:8080
+      - 1900:1900/udp #optional
+      - 8843:8843 #optional
+      - 8880:8880 #optional
+      - 6789:6789 #optional
+      - 5514:5514/udp #optional
+    restart: unless-stopped
+
+  db:
+    image: docker.io/mongo:8.0.4
+    container_name: ${COMPOSE_PROJECT_NAME}_db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+      - MONGO_USER=unifi
+      - MONGO_PASS=unifi
+      - MONGO_DBNAME=unifi
+      - MONGO_AUTHSOURCE=admin
+    volumes:
+      - type: volume
+        source: mongo_db
+        target: /data/db
+        read_only: false
+      - /root/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+    restart: unless-stopped
+
+  logs:
+    image: bash
+    container_name: ${COMPOSE_PROJECT_NAME}_logs
+    depends_on:
+      - controller
+    command: bash -c 'tail -F /unifi/log/*.log'
+    volumes:
+      - type: volume
+        source: unifi_log
+        target: /unifi/log
+        read_only: true
+    restart: unless-stopped
+
+volumes:
+  unifi_log:
+  unifi_config:
+  mongo_db:
