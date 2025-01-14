@@ -19,7 +19,7 @@ services:
       - MONGO_TLS= #optional
     volumes:
       - type: volume
-        source: unifi_config
+        source: config
         target: /config
         read_only: false
     ports:
@@ -49,6 +49,10 @@ services:
         source: mongo_db
         target: /data/db
         read_only: false
+      - type: volume
+        source: mongo_db_config
+        target: /data/configdb
+        read_only: false
       - /root/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
     restart: unless-stopped
 
@@ -57,15 +61,15 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME}_logs
     depends_on:
       - controller
-    command: bash -c 'tail -F /unifi/log/*.log'
+    command: bash -c 'tail -F /config/logs/*.log'
     volumes:
       - type: volume
-        source: unifi_log
-        target: /unifi/log
+        source: config
+        target: /config
         read_only: true
     restart: unless-stopped
 
 volumes:
-  unifi_log:
-  unifi_config:
+  config:
   mongo_db:
+  mongo_db_config:

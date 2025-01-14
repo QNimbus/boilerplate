@@ -1,0 +1,18 @@
+services:
+  homepage:    
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: ${COMPOSE_PROJECT_NAME}
+    ports:
+      - 3000:3000
+    volumes:
+      - type: volume
+        source: config
+        target: /app/config
+        read_only: false
+      - type: bind # (optional) For docker integrations
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+
+volumes:
+  config:
