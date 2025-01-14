@@ -7,15 +7,19 @@ services:
       - HOMEPAGE_VAR_PROXMOX_PASSWORD=${HOMEPAGE_VAR_PROXMOX_PASSWORD}
       - HOMEPAGE_VAR_UNIFI_USERNAME=${HOMEPAGE_VAR_UNIFI_USERNAME}
       - HOMEPAGE_VAR_UNIFI_PASSWORD=${HOMEPAGE_VAR_UNIFI_PASSWORD}
+      - HOMEPAGE_VAR_TRUENAS_USERNAME=${HOMEPAGE_VAR_TRUENAS_USERNAME}
+      - HOMEPAGE_VAR_TRUENAS_PASSWORD=${HOMEPAGE_VAR_TRUENAS_PASSWORD}
+      - HOMEPAGE_VAR_TRUENAS_API_KEY=${HOMEPAGE_VAR_TRUENAS_API_KEY}
     volumes:
       - type: bind
         source: /opt/portainer/homepage/config
         target: /app/config
         read_only: false
-      - type: bind # (optional) For docker integrations
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-        read_only: true
+      # Uncomment the following lines if you do not use the docker-socket-proxy service
+      # - type: bind # (optional) For docker integrations
+      #   source: /var/run/docker.sock
+      #   target: /var/run/docker.sock
+      #   read_only: true
     networks:
       - docker-services
     ports:
