@@ -32,6 +32,8 @@ services:
       - 8880:8880 #optional
       - 6789:6789 #optional
       - 5514:5514/udp #optional
+    networks:
+      - docker-services
     restart: unless-stopped
 
   db:
@@ -54,6 +56,8 @@ services:
         target: /data/configdb
         read_only: false
       - /root/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+    networks:
+      - docker-services
     restart: unless-stopped
 
   logs:
@@ -67,9 +71,27 @@ services:
         source: config
         target: /config
         read_only: true
+    networks:
+      - docker-services
     restart: unless-stopped
 
 volumes:
   config:
   mongo_db:
   mongo_db_config:
+
+# Create a new network for the services to communicate over
+#
+# $ docker network create \
+#   --driver bridge \
+#   --subnet 172.100.0.0/16 \
+#   --gateway 172.100.0.1 \
+#   --opt "com.docker.network.bridge.enable_icc"="true" \
+#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
+#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
+#   --opt "com.docker.network.driver.mtu"="1500" \
+#   docker-services
+
+networks:
+  docker-services:
+    external: true
