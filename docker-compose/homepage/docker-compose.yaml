@@ -5,14 +5,11 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - type: volume
-        source: config
+      - type: bind
+        source: /opt/portainer/homepage/config
         target: /app/config
         read_only: false
       - type: bind # (optional) For docker integrations
         source: /var/run/docker.sock
         target: /var/run/docker.sock
         read_only: true
-
-volumes:
-  config:
