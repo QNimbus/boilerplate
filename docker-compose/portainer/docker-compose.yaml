@@ -1,0 +1,22 @@
+services:
+  portainer-ce:
+    image: portainer/portainer-ce:2.21.5
+    container_name: ${COMPOSE_PROJECT_NAME}_app
+    volumes:
+      - type: volume
+        source: data
+        target: /data
+        read_only: false
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 8000:8000
+      - 9443:9443
+    restart: always
+    healthcheck:
+      test: curl --fail http://127.0.0.1:9000/api/status || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: "3"
+
+volumes:
+  data:
