@@ -35,6 +35,11 @@ services:
     networks:
       - docker-services
     restart: unless-stopped
+    healthcheck:
+      test: curl --fail -k https://localhost:8443 || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: "3"
 
   db:
     image: docker.io/mongo:8.0.4

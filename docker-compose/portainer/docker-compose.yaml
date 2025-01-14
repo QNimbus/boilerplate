@@ -1,6 +1,6 @@
 services:
   portainer-ce:
-    image: portainer/portainer-ce:2.21.5
+    image: portainer/portainer-ce:alpine
     container_name: ${COMPOSE_PROJECT_NAME}_app
     volumes:
       - type: volume
@@ -13,10 +13,15 @@ services:
       - 9443:9443
     restart: always
     healthcheck:
-      test: curl --fail http://127.0.0.1:9000/api/status || exit 1
+      test: nc -z -v localhost 9000 || exit 1
       interval: 30s
       timeout: 5s
       retries: "3"
 
 volumes:
   data:
+
+# To start the portainer service using 'docker run':
+#
+# docker volume create portainer_data
+# docker run -it --detach --name portainer --mount type=volume,source=portainer_data,target=/data -v /var/run/docker.sock:/var/run/docker.sock -p 8000:8000 -p 9443:9443 --restart always --health-cmd "nc -z -v localhost 9000 || exit 1" --health-interval 30s --health-retries 3 --health-timeout 5s portainer/portainer-ce:alpine
