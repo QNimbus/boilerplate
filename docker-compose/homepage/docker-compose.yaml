@@ -2,8 +2,9 @@ services:
   homepage:    
     image: ghcr.io/gethomepage/homepage:latest
     container_name: ${COMPOSE_PROJECT_NAME}
-    ports:
-      - 3000:3000
+    environment:
+      - HOMEPAGE_VAR_PROXMOX_USERNAME=${HOMEPAGE_VAR_PROXMOX_USERNAME}
+      - HOMEPAGE_VAR_PROXMOX_PASSWORD=${HOMEPAGE_VAR_PROXMOX_PASSWORD}
     volumes:
       - type: bind
         source: /opt/portainer/homepage/config
@@ -13,3 +14,5 @@ services:
         source: /var/run/docker.sock
         target: /var/run/docker.sock
         read_only: true
+    ports:
+      - 3000:3000
