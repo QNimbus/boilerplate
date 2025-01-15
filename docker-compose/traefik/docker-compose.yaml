@@ -1,0 +1,53 @@
+#
+# See: https://docs.docker.com/reference/compose-file/
+#
+# This compose file uses a custom traefik image that has been built with the ssh provider enabled.
+# To build the image, you can use the following commands:
+#
+# $ docker compose build
+# $ docker compose push
+
+services:
+  traefik:
+    image: qnimbus/traefik_with_ssh:${TAG_VERSION:-v3.3}
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        TAG_VERSION: ${TAG_VERSION:-v3.3}
+    container_name: ${COMPOSE_PROJECT_NAME}
+    environment:
+      # Ensure the private key is base64 encoded
+      - TRAEFIK_USER_PRIVATE_KEY=${TRAEFIK_USER_PRIVATE_KEY:-""}
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.endpoint=ssh://traefik@10.72.99.42:22"
+      - "--entryPoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    networks:
+      - docker-services
+    restart: unless-stopped
+    # This is only required if you are not using the docker-socket-proxy service or the ssh connection
+    # volumes:
+    #   - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+# Create a new network for the services to communicate over
+#
+# $ docker network create \
+#   --driver bridge \
+#   --subnet 172.100.0.0/16 \
+#   --gateway 172.100.0.1 \
+#   --opt "com.docker.network.bridge.enable_icc"="true" \
+#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
+#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
+#   --opt "com.docker.network.driver.mtu"="1500" \
+#   docker-services
+
+networks:
+  docker-services:
+    external: true
