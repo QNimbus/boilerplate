@@ -2,6 +2,7 @@ services:
   docker-socket-proxy:
     image: ghcr.io/tecnativa/docker-socket-proxy:latest
     container_name: ${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
     environment:
       - CONTAINERS=1  # Allow access to viewing containers
       - SERVICES=0    # Allow access to viewing services (necessary when using Docker Swarm)
@@ -16,7 +17,6 @@ services:
       - docker-services
     ports:
       - 127.0.0.1:2375:2375
-    restart: unless-stopped
 
 # Create a new network for the services to communicate over
 #

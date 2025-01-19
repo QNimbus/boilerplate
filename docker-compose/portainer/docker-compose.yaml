@@ -2,26 +2,75 @@ services:
   portainer-ce:
     image: portainer/portainer-ce:alpine
     container_name: ${COMPOSE_PROJECT_NAME}_app
+    restart: always
     volumes:
       - type: volume
         source: data
         target: /data
         read_only: false
       - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - 8000:8000
-      - 9443:9443
-    restart: always
+    ports: []
+      # - 9000:9000
+      # - 9443:9443
+    networks:
+      - docker-services
     healthcheck:
       test: nc -z -v localhost 9000 || exit 1
       interval: 30s
       timeout: 5s
       retries: "3"
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.portainer.entrypoints: websecure
+      traefik.http.routers.portainer.rule: Host(`portainer.apps.vwn.io`)
+      traefik.http.routers.portainer.tls: 'true'
+      traefik.http.routers.portainer.tls.certresolver: porkbun_dns_resolver
+      traefik.http.routers.portainer.service: portainer
+      traefik.http.services.portainer.loadbalancer.server.port: 9000
+
+# Create a new network for the services to communicate over
+#
+# $ docker network create \
+#   --driver bridge \
+#   --opt "com.docker.network.bridge.enable_icc"="true" \
+#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
+#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
+#   --opt "com.docker.network.driver.mtu"="1500" \
+#   docker-services
+
+networks:
+  docker-services:
+    external: true
+    name: docker-services
 
 volumes:
   data:
 
 # To start the portainer service using 'docker run':
 #
-# docker volume create portainer_data
-# docker run -it --detach --name portainer --mount type=volume,source=portainer_data,target=/data -v /var/run/docker.sock:/var/run/docker.sock -p 8000:8000 -p 9443:9443 --restart always --health-cmd "nc -z -v localhost 9000 || exit 1" --health-interval 30s --health-retries 3 --health-timeout 5s portainer/portainer-ce:alpine
+# sudo docker volume create portainer_data
+# sudo docker run --detach \
+#   --name portainer \
+#   --net docker-services \
+#   -p 9000:9000 \
+#   --restart always \
+#   -v portainer_data:/data \
+#   -v /var/run/docker.sock:/var/run/docker.sock \
+#   -l traefik.enable=true \
+#   -l traefik.docker.network=docker-services \
+#   -l traefik.http.routers.portainer.entrypoints=websecure \
+#   -l 'traefik.http.routers.portainer.rule=Host(`portainer.apps.vwn.io`)' \
+#   -l traefik.http.routers.portainer.tls=true \
+#   -l traefik.http.routers.portainer.tls.certresolver=porkbun_dns_resolver \
+#   -l traefik.http.routers.portainer.service=portainer \
+#   -l traefik.http.services.portainer.loadbalancer.server.port=9000 \
+#   portainer/portainer-ce:alpine
+#
+# sudo docker run --detach \
+#   --name portainer_agent \
+#   -p 9001:9001 \
+#   --restart=always \
+#   -v /var/run/docker.sock:/var/run/docker.sock \
+#   -v /var/lib/docker/volumes:/var/lib/docker/volumes \
+#   -v /:/host \
+#   portainer/agent:2.21.5

@@ -16,38 +16,97 @@ services:
       args:
         TAG_VERSION: ${TAG_VERSION:-v3.3}
     container_name: ${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
     environment:
       # Ensure the private key is base64 encoded
       - TRAEFIK_USER_PRIVATE_KEY=${TRAEFIK_USER_PRIVATE_KEY:-""}
+      - PORKBUN_API_KEY=${PORKBUN_API_KEY:-""}
+      - PORKBUN_SECRET_API_KEY=${PORKBUN_SECRET_API_KEY:-""}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-""}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-""}
     command:
-      #- "--log.level=DEBUG"
-      - "--api.insecure=true"
+      # - "--log.level=DEBUG"
+      - "--api=true"
+      - "--ping=true"
+      - "--ping.entryPoint=web"
+      # - "--accesslog=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.endpoint=ssh://traefik@10.72.99.42:22"
+      - "--providers.docker.endpoint=ssh://traefik@10.72.200.3:22"
+      - "--serversTransport.insecureSkipVerify=true"
       - "--entryPoints.web.address=:80"
+      # - "--entryPoints.web-alt.address=:8080"
+      - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.unifi-8843.address=:8843"
+      - "--certificatesresolvers.porkbun_dns_resolver.acme.email=traefik@bvw.email"
+      - "--certificatesresolvers.porkbun_dns_resolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.porkbun_dns_resolver.acme.keytype=EC256"
+      - "--certificatesresolvers.porkbun_dns_resolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.porkbun_dns_resolver.acme.dnschallenge.provider=porkbun"
+      - "--certificatesresolvers.porkbun_dns_resolver.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
+    volumes:
+      # This is only required if you are not using the docker-socket-proxy service or the ssh connection
+      # - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      #
+      # - type: volume
+      #   source: config
+      #   target: /etc/traefik
+      #   read_only: true
+      - type: volume
+        source: letsencrypt
+        target: /letsencrypt
+        read_only: false
     ports:
       - "80:80"
-      - "8080:8080"
+      - "443:443"
+      - "8843:8843"
+      # - "8080:8080"
+      # - "8443:8443"
     networks:
+      - unifi
       - docker-services
-    restart: unless-stopped
-    # This is only required if you are not using the docker-socket-proxy service or the ssh connection
-    # volumes:
-    #   - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    # healthcheck:
+    #   test: wget --spider --quiet http://127.0.0.1:80/ping || exit 1
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 10s
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.dashboard.rule: Host(`traefik.apps.vwn.io`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+      traefik.http.routers.dashboard.entrypoints: websecure
+      traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.tls: 'true'
+      traefik.http.routers.dashboard.tls.certresolver: porkbun_dns_resolver
+      # traefik.http.routers.dashboard.middlewares: auth
+      # traefik.http.middlewares.auth.basicauth.users: test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/
 
 # Create a new network for the services to communicate over
 #
 # $ docker network create \
 #   --driver bridge \
-#   --subnet 172.100.0.0/16 \
-#   --gateway 172.100.0.1 \
 #   --opt "com.docker.network.bridge.enable_icc"="true" \
 #   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
 #   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
 #   --opt "com.docker.network.driver.mtu"="1500" \
 #   docker-services
+#
+# $ sudo docker network create \
+#   --driver bridge \
+#   --opt "com.docker.network.bridge.enable_icc"="true" \
+#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
+#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
+#   --opt "com.docker.network.driver.mtu"="1500" \
+#   unifi
 
 networks:
   docker-services:
     external: true
+    name: docker-services
+  unifi:
+    external: true
+    name: unifi
+
+volumes:
+  config:
+  letsencrypt:

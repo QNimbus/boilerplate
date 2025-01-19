@@ -1,7 +1,10 @@
 services:
-  homepage:    
+  homepage:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: ${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
+    healthcheck:
+      disable: true
     environment:
       - HOMEPAGE_VAR_PROXMOX_USERNAME=${HOMEPAGE_VAR_PROXMOX_USERNAME}
       - HOMEPAGE_VAR_PROXMOX_PASSWORD=${HOMEPAGE_VAR_PROXMOX_PASSWORD}
@@ -15,6 +18,10 @@ services:
         source: /opt/portainer/homepage/config
         target: /app/config
         read_only: false
+      - type: volume
+        source: icons
+        target: /app/public/icons
+        read_only: true
       # Uncomment the following lines if you do not use the docker-socket-proxy service
       # - type: bind # (optional) For docker integrations
       #   source: /var/run/docker.sock
@@ -22,15 +29,22 @@ services:
       #   read_only: true
     networks:
       - docker-services
-    ports:
-      - 3000:3000
+    ports: []
+      # - 3000:3000
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: docker-services
+      traefik.http.routers.homepage.entrypoints: websecure
+      traefik.http.routers.homepage.rule: Host(`homepage.apps.vwn.io`)
+      traefik.http.routers.homepage.tls: 'true'
+      traefik.http.routers.homepage.tls.certresolver: porkbun_dns_resolver
+      traefik.http.routers.homepage.service: homepage
+      traefik.http.services.homepage.loadbalancer.server.port: 3000
 
 # Create a new network for the services to communicate over
 #
 # $ docker network create \
 #   --driver bridge \
-#   --subnet 172.100.0.0/16 \
-#   --gateway 172.100.0.1 \
 #   --opt "com.docker.network.bridge.enable_icc"="true" \
 #   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
 #   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
@@ -40,3 +54,6 @@ services:
 networks:
   docker-services:
     external: true
+
+volumes:
+  icons:
