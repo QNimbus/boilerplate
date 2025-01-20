@@ -6,6 +6,7 @@ services:
     environment:
       DEFAULT_DOMAIN: vwn.io
       IS_HTTPS_ENABLED: false
+      INITIAL_API_KEY: ${SHLINK_INITIAL_API_KEY}
       GEOLITE_LICENSE_KEY:
     networks:
       - traefik
