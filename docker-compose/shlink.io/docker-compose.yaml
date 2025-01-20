@@ -1,0 +1,25 @@
+services:
+  shlink:
+    image: shlinkio/shlink:stable
+    container_name: ${COMPOSE_PROJECT_NAME}
+    restart: unless-stopped
+    environment:
+      DEFAULT_DOMAIN: vwn.io
+      IS_HTTPS_ENABLED: false
+      GEOLITE_LICENSE_KEY:
+    networks:
+      - traefik
+    ports: []
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: traefik
+      traefik.http.routers.shlink.entrypoints: websecure
+      traefik.http.routers.shlink.rule: Host(`shlink.apps.vwn.io`)
+      traefik.http.routers.shlink.tls: 'true'
+      traefik.http.routers.shlink.tls.certresolver: porkbun_dns_resolver
+      traefik.http.routers.shlink.service: shlink
+      traefik.http.services.shlink.loadbalancer.server.port: 8080
+
+networks:
+  traefik:
+    external: true
