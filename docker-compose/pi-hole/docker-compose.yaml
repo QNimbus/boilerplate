@@ -28,12 +28,10 @@ services:
     # cap_add:
     #   - NET_ADMIN # Required if you are using Pi-hole as your DHCP server, else not needed
     networks:
-      docker-services:
-      # guest_bridge_net:
-      # iot_bridge_net:
+      traefik:
     labels:
       traefik.enable: 'true'
-      traefik.docker.network: docker-services
+      traefik.docker.network: traefik
       traefik.http.routers.pihole.entrypoints: websecure
       traefik.http.routers.pihole.rule: Host(`pihole.apps.vwn.io`)
       traefik.http.routers.pihole.tls: 'true'
@@ -45,46 +43,6 @@ volumes:
   etc:
   dnsmasq:
 
-# Create a new network for the services to communicate over
-#
-# $ docker network create \
-#   --driver bridge \
-#   --opt "com.docker.network.bridge.enable_icc"="true" \
-#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
-#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
-#   --opt "com.docker.network.driver.mtu"="1500" \
-#   docker-services
-
-# docker network create \
-#   -d macvlan \
-#   --subnet=10.72.0.0/16 \
-#   --gateway=10.72.0.1 \
-#   lan_net
-
-# docker network create \
-#   -d macvlan \
-#   --subnet=10.20.0.0/16 \
-#   --gateway=10.20.0.1 \
-#   -o parent=eth1 \
-#   guest_net
-
-# docker network create \
-#   -d macvlan \
-#   --subnet=10.30.0.0/16 \
-#   --gateway=10.30.0.1 \
-#   -o parent=eth2 \
-#   iot_net
-
-# $ docker network create \
-#   --driver bridge \
-#   --opt "com.docker.network.bridge.enable_icc"="true" \
-#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
-#   --opt "com.docker.network.bridge.host_binding_ipv4"="10.30.99.42" \
-#   --opt "com.docker.network.driver.mtu"="1500" \
-#   iot_bridge_net
-
 networks:
-  docker-services:
+  traefik:
     external: true
-  # iot_bridge_net:
-  #   external: true
