@@ -14,22 +14,10 @@ services:
         target: /var/run/docker.sock
         read_only: true
     networks:
-      - docker-services
+      - traefik
     ports:
       - 127.0.0.1:2375:2375
 
-# Create a new network for the services to communicate over
-#
-# $ docker network create \
-#   --driver bridge \
-#   --subnet 172.100.0.0/16 \
-#   --gateway 172.100.0.1 \
-#   --opt "com.docker.network.bridge.enable_icc"="true" \
-#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
-#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
-#   --opt "com.docker.network.driver.mtu"="1500" \
-#   docker-services
-
 networks:
-  docker-services:
+  traefik:
     external: true
