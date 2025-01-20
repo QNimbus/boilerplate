@@ -18,7 +18,7 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME}
     restart: unless-stopped
     environment:
-      # Ensure the private key is base64 encoded
+      # Ensure the private key is base64 encoded. (See: entrypoint-custom.sh)
       - TRAEFIK_USER_PRIVATE_KEY=${TRAEFIK_USER_PRIVATE_KEY:-""}
       - PORKBUN_API_KEY=${PORKBUN_API_KEY:-""}
       - PORKBUN_SECRET_API_KEY=${PORKBUN_SECRET_API_KEY:-""}
@@ -35,7 +35,7 @@ services:
       - "--providers.docker.endpoint=ssh://traefik@10.72.200.3:22"
       - "--serversTransport.insecureSkipVerify=true"
       - "--entryPoints.web.address=:80"
-      # - "--entryPoints.web-alt.address=:8080"
+      - "--entryPoints.web-alt.address=:8080"
       - "--entryPoints.websecure.address=:443"
       - "--entryPoints.unifi-8843.address=:8843"
       - "--certificatesresolvers.porkbun_dns_resolver.acme.email=traefik@bvw.email"
@@ -60,11 +60,10 @@ services:
       - "80:80"
       - "443:443"
       - "8843:8843"
-      # - "8080:8080"
-      # - "8443:8443"
+      - "8080:8080"
     networks:
       - unifi
-      - docker-services
+      - traefik
     # healthcheck:
     #   test: wget --spider --quiet http://127.0.0.1:80/ping || exit 1
     #   interval: 30s
@@ -81,15 +80,21 @@ services:
       # traefik.http.routers.dashboard.middlewares: auth
       # traefik.http.middlewares.auth.basicauth.users: test:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/
 
+  # Use this service to test your incoming requests. You can use the following command to test:
+  #
+  # $ curl --resolve whoami.localhost:80:10.72.200.3 http://whoami.localhost
+  #
+  # whoami:
+  #   image: "traefik/whoami"
+  #   container_name: "simple-service"
+  #   networks:
+  #     - traefik
+  #   labels:
+  #     traefik.enable: 'true'
+  #     traefik.http.routers.whoami.entrypoints: web
+  #     traefik.http.routers.whoami.rule: Host(`whoami.localhost`)
+
 # Create a new network for the services to communicate over
-#
-# $ docker network create \
-#   --driver bridge \
-#   --opt "com.docker.network.bridge.enable_icc"="true" \
-#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
-#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
-#   --opt "com.docker.network.driver.mtu"="1500" \
-#   docker-services
 #
 # $ sudo docker network create \
 #   --driver bridge \
@@ -97,12 +102,22 @@ services:
 #   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
 #   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
 #   --opt "com.docker.network.driver.mtu"="1500" \
-#   unifi
+#   traefik
+#
+# networks:
+#   traefik:
+#     external: true
+#     name: traefik
 
 networks:
-  docker-services:
-    external: true
-    name: docker-services
+  traefik:
+    name: traefik
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+      com.docker.network.driver.mtu: "1500"
   unifi:
     external: true
     name: unifi
