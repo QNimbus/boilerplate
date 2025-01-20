@@ -35,9 +35,13 @@ services:
       - "--providers.docker.endpoint=ssh://traefik@10.72.200.3:22"
       - "--serversTransport.insecureSkipVerify=true"
       - "--entryPoints.web.address=:80"
+      - "--entryPoints.web.forwardedHeaders.trustedIPs=127.0.0.1/32,10.72.0.0/16,10.20.0.0/16,10.30.0.0/16"
       - "--entryPoints.web-alt.address=:8080"
+      - "--entryPoints.web-alt.forwardedHeaders.trustedIPs=127.0.0.1/32,10.72.0.0/16,10.20.0.0/16,10.30.0.0/16"
       - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.websecure.forwardedHeaders.trustedIPs=127.0.0.1/32,10.72.0.0/16,10.20.0.0/16,10.30.0.0/16"
       - "--entryPoints.unifi-8843.address=:8843"
+      - "--entryPoints.unifi-8843.forwardedHeaders.trustedIPs=127.0.0.1/32,10.72.0.0/16,10.20.0.0/16,10.30.0.0/16"
       - "--certificatesresolvers.porkbun_dns_resolver.acme.email=traefik@bvw.email"
       - "--certificatesresolvers.porkbun_dns_resolver.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.porkbun_dns_resolver.acme.keytype=EC256"
@@ -111,6 +115,7 @@ services:
 
 networks:
   traefik:
+    external: true
     name: traefik
     driver: bridge
     driver_opts:

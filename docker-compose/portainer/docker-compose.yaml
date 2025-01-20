@@ -13,7 +13,7 @@ services:
       # - 9000:9000
       # - 9443:9443
     networks:
-      - docker-services
+      - traefik
     healthcheck:
       test: nc -z -v localhost 9000 || exit 1
       interval: 30s
@@ -28,20 +28,9 @@ services:
       traefik.http.routers.portainer.service: portainer
       traefik.http.services.portainer.loadbalancer.server.port: 9000
 
-# Create a new network for the services to communicate over
-#
-# $ docker network create \
-#   --driver bridge \
-#   --opt "com.docker.network.bridge.enable_icc"="true" \
-#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
-#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
-#   --opt "com.docker.network.driver.mtu"="1500" \
-#   docker-services
-
 networks:
-  docker-services:
+  traefik:
     external: true
-    name: docker-services
 
 volumes:
   data:
@@ -51,13 +40,13 @@ volumes:
 # sudo docker volume create portainer_data
 # sudo docker run --detach \
 #   --name portainer \
-#   --net docker-services \
+#   --net traefik \
 #   -p 9000:9000 \
 #   --restart always \
 #   -v portainer_data:/data \
 #   -v /var/run/docker.sock:/var/run/docker.sock \
 #   -l traefik.enable=true \
-#   -l traefik.docker.network=docker-services \
+#   -l traefik.docker.network=traefik \
 #   -l traefik.http.routers.portainer.entrypoints=websecure \
 #   -l 'traefik.http.routers.portainer.rule=Host(`portainer.apps.vwn.io`)' \
 #   -l traefik.http.routers.portainer.tls=true \

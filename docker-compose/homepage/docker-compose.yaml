@@ -13,6 +13,9 @@ services:
       - HOMEPAGE_VAR_TRUENAS_USERNAME=${HOMEPAGE_VAR_TRUENAS_USERNAME}
       - HOMEPAGE_VAR_TRUENAS_PASSWORD=${HOMEPAGE_VAR_TRUENAS_PASSWORD}
       - HOMEPAGE_VAR_TRUENAS_API_KEY=${HOMEPAGE_VAR_TRUENAS_API_KEY}
+      - HOMEPAGE_VAR_PORTAINER_API_KEY_ENV_2=${HOMEPAGE_VAR_PORTAINER_API_KEY_ENV_2}
+      - HOMEPAGE_VAR_PORTAINER_API_KEY_ENV_3=${HOMEPAGE_VAR_PORTAINER_API_KEY_ENV_3}
+      - HOMEPAGE_VAR_PIHOLE_API_KEY=${HOMEPAGE_VAR_PIHOLE_API_KEY}
     volumes:
       - type: bind
         source: /opt/portainer/homepage/config
@@ -28,12 +31,11 @@ services:
       #   target: /var/run/docker.sock
       #   read_only: true
     networks:
-      - docker-services
+      - traefik
     ports: []
-      # - 3000:3000
     labels:
       traefik.enable: 'true'
-      traefik.docker.network: docker-services
+      traefik.docker.network: traefik
       traefik.http.routers.homepage.entrypoints: websecure
       traefik.http.routers.homepage.rule: Host(`homepage.apps.vwn.io`)
       traefik.http.routers.homepage.tls: 'true'
@@ -41,18 +43,8 @@ services:
       traefik.http.routers.homepage.service: homepage
       traefik.http.services.homepage.loadbalancer.server.port: 3000
 
-# Create a new network for the services to communicate over
-#
-# $ docker network create \
-#   --driver bridge \
-#   --opt "com.docker.network.bridge.enable_icc"="true" \
-#   --opt "com.docker.network.bridge.enable_ip_masquerade"="true" \
-#   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
-#   --opt "com.docker.network.driver.mtu"="1500" \
-#   docker-services
-
 networks:
-  docker-services:
+  traefik:
     external: true
 
 volumes:

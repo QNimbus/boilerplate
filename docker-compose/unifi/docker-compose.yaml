@@ -24,15 +24,15 @@ services:
         target: /config
         read_only: false
     ports:
-      # - 8443:8443 # Web UI
+      - 10.72.200.3:3478:3478/udp
+      - 10.72.200.3:10001:10001/udp
+      # - 8080:8080 # Web UI & Device adoption (http)
+      # - 8443:8443 # Web UI (https)
       # - 8880:8880 # Guest portal (http)
       # - 8843:8843 # Guest portal (https)
-      - 3478:3478/udp
-      - 10001:10001/udp
-      - 8080:8080
-      - 1900:1900/udp #optional
-      - 6789:6789 #optional
-      - 5514:5514/udp #optional
+      # - 1900:1900/udp # Optional: Used to "Make application discoverable on L2 network" in the UniFi Network settings.
+      # - 6789:6789 # Optional: Used for UniFi mobile speed test.
+      # - 5514:5514/udp # Optional: Used for remote syslog capture.
     networks:
       - unifi
     labels:
@@ -42,22 +42,21 @@ services:
       traefik.http.routers.unifi.rule: Host(`unifi.apps.vwn.io`)
       traefik.http.routers.unifi-guest-portal.entrypoints: unifi-8843
       traefik.http.routers.unifi-guest-portal.rule: Host(`portal.guest.home.vwn.io`)
-      # traefik.http.routers.unifi-inform.entrypoints: web-alt
-      # traefik.http.routers.unifi-inform.rule: PathPrefix(`/inform`)
+      traefik.http.routers.unifi-inform.entrypoints: web-alt
+      traefik.http.routers.unifi-inform.rule: PathPrefix(`/inform`)
       traefik.http.routers.unifi.tls: 'true'
       traefik.http.routers.unifi-guest-portal.tls: 'true'
       traefik.http.routers.unifi.tls.certresolver: porkbun_dns_resolver
       traefik.http.routers.unifi-guest-portal.tls.certresolver: porkbun_dns_resolver
       traefik.http.routers.unifi.service: unifi
       traefik.http.routers.unifi-guest-portal.service: unifi-guest-portal
-      # traefik.http.routers.unifi-inform.service: unifi-inform
-      # traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto: https
+      traefik.http.routers.unifi-inform.service: unifi-inform
       traefik.http.services.unifi.loadbalancer.server.port: 8443
       traefik.http.services.unifi-guest-portal.loadbalancer.server.port: 8843
       traefik.http.services.unifi.loadbalancer.server.scheme: https
       traefik.http.services.unifi-guest-portal.loadbalancer.server.scheme: https
-      # traefik.http.services.unifi-inform.loadbalancer.server.port: 8080
-      # traefik.http.services.unifi-inform.loadbalancer.server.scheme: http
+      traefik.http.services.unifi-inform.loadbalancer.server.port: 8080
+      traefik.http.services.unifi-inform.loadbalancer.server.scheme: http
 
   db:
     image: docker.io/mongo:8.0.4
@@ -112,8 +111,19 @@ volumes:
 #   --opt "com.docker.network.bridge.host_binding_ipv4"="0.0.0.0" \
 #   --opt "com.docker.network.driver.mtu"="1500" \
 #   unifi
+#
+# networks:
+#   unifi:
+#     external: true
+#     name: unifi
 
 networks:
   unifi:
     external: true
     name: unifi
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+      com.docker.network.driver.mtu: "1500"
