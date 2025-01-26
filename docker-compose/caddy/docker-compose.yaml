@@ -1,0 +1,111 @@
+#
+# See: https://docs.docker.com/reference/compose-file/
+#
+# To build the image, you can use the following commands:
+#
+# $ docker compose build
+# $ docker compose push
+
+services:
+  caddy:
+    container_name: ${COMPOSE_PROJECT_NAME}
+    image: qnimbus/caddy:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args: {}
+    restart: unless-stopped
+    healthcheck:
+      disable: true
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - PORKBUN_API_KEY=${PORKBUN_API_KEY}
+      - PORKBUN_API_SECRET_KEY=${PORKBUN_API_SECRET_KEY}
+    volumes:
+      - type: bind
+        source: /opt/portainer/caddy/conf
+        target: /etc/caddy
+        read_only: false
+      - type: bind
+        source: /opt/portainer/caddy/site
+        target: /srv
+        read_only: false
+      - type: volume
+        source: config
+        target: /config
+        read_only: false
+      - type: volume
+        source: data
+        target: /data
+        read_only: false
+    networks:
+      services:
+      skynet_lan:
+        ipv4_address: 10.72.0.100 # Assign a static IP
+      skynet_guest:
+        ipv4_address: 10.20.0.100 # Assign a static IP
+      skynet_iot:
+        ipv4_address: 10.30.0.100 # Assign a static IP
+    ports: []
+    labels: []
+
+volumes:
+  config:
+  data:
+
+# Create a new network for the services to communicate over
+# If you setup the macvlan network without subnet, docker will automatically assign one to it.
+# As we are going to obtain an ip from DHCP, we actually don’t care what subnet it is.
+#
+# Since docker assigns the container a non exisiting subnet, the container will have no internet access initially.
+# You will need to make sure that your container has the dhcp client.
+#
+# See: https://forums.docker.com/t/docker-network-create-macvlan-with-dhcp-possible/81092/4
+#
+# $ sudo docker network create \
+#   -d macvlan \
+#   --subnet=10.72.0.0/16 \
+#   --gateway=10.72.0.1 \
+#   -o parent=eth0 \
+#   skynet_lan
+#
+# $ sudo docker network create \
+#   -d macvlan \
+#   --subnet=10.20.0.0/16 \
+#   --gateway=10.20.0.1 \
+#   -o parent=eth1 \
+#   skynet_guest
+#
+# $ sudo docker network create \
+#   -d macvlan \
+#   --subnet=10.30.0.0/16 \
+#   --gateway=10.30.0.1 \
+#   -o parent=eth2 \
+#   skynet_iot
+#
+# Create a new network for the services to communicate over
+#
+# $ sudo docker network create \
+#   --driver bridge \
+#   --opt "com.docker.network.bridge.enable_icc"="true" \
+#   services
+#
+# networks:
+#   services:
+#     external: true
+#     name: services
+
+networks:
+  services:
+    external: true
+    name: services
+  skynet_lan:
+    external: true
+    name: skynet_lan
+  skynet_guest:
+    external: true
+    name: skynet_guest
+  skynet_iot:
+    external: true
+    name: skynet_iot
